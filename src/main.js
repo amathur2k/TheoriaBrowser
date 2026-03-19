@@ -2,6 +2,7 @@ import { TheoriaEngine } from './engine/uci.js';
 import { BoardUI } from './ui/board.js';
 import { AnalysisPanel, formatScore } from './ui/analysis.js';
 import { EvalBar } from './ui/evalbar.js';
+import { fetchRecentGames } from './ui/chesscom.js';
 
 // State
 let engine = null;
@@ -138,6 +139,91 @@ function renderMoveList() {
  * Set up control buttons and inputs.
  */
 function setupControls() {
+  // Chess.com import
+  const modal = document.getElementById('chesscom-modal');
+  const usernameInput = document.getElementById('chesscom-username');
+  const fetchBtn = document.getElementById('chesscom-fetch');
+  const statusEl = document.getElementById('chesscom-status');
+  const gamesEl = document.getElementById('chesscom-games');
+
+  document.getElementById('btn-chesscom').addEventListener('click', () => {
+    modal.hidden = false;
+    usernameInput.focus();
+  });
+
+  document.getElementById('chesscom-close').addEventListener('click', () => {
+    modal.hidden = true;
+  });
+
+  modal.addEventListener('click', (e) => {
+    if (e.target === modal) modal.hidden = true;
+  });
+
+  async function doFetch() {
+    const username = usernameInput.value.trim();
+    if (!username) return;
+
+    fetchBtn.disabled = true;
+    statusEl.textContent = 'Fetching games...';
+    statusEl.className = 'modal-status';
+    gamesEl.innerHTML = '';
+
+    try {
+      const games = await fetchRecentGames(username);
+      statusEl.textContent = `${games.length} recent games for ${username}`;
+
+      gamesEl.innerHTML = '';
+      for (const g of games) {
+        const item = document.createElement('div');
+        item.className = 'game-item';
+
+        const isWhite = g.white.toLowerCase() === username.toLowerCase();
+        const whiteName = g.white.toLowerCase() === username.toLowerCase()
+          ? `<span class="highlight">${g.white}</span>` : g.white;
+        const blackName = g.black.toLowerCase() === username.toLowerCase()
+          ? `<span class="highlight">${g.black}</span>` : g.black;
+
+        const wr = g.whiteRating ? ` (${g.whiteRating})` : '';
+        const br = g.blackRating ? ` (${g.blackRating})` : '';
+
+        item.innerHTML = `
+          <div class="game-players">${whiteName}${wr} vs ${blackName}${br}</div>
+          <div class="game-meta">
+            <span class="game-result">${g.result}</span>
+            <span>${g.timeControl}</span>
+            <span>${g.date}</span>
+          </div>`;
+
+        item.addEventListener('click', () => {
+          try {
+            board.loadPGN(g.pgn);
+            renderMoveList();
+            analysis.clear();
+            evalBar.reset();
+            if (engine) engine.stop();
+            if (analysisEnabled && engine) runAnalysis();
+            modal.hidden = true;
+          } catch (err) {
+            statusEl.textContent = 'Failed to load game: ' + err.message;
+            statusEl.className = 'modal-status error';
+          }
+        });
+
+        gamesEl.appendChild(item);
+      }
+    } catch (err) {
+      statusEl.textContent = err.message;
+      statusEl.className = 'modal-status error';
+    } finally {
+      fetchBtn.disabled = false;
+    }
+  }
+
+  fetchBtn.addEventListener('click', doFetch);
+  usernameInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') doFetch();
+  });
+
   // New Game
   document.getElementById('btn-new').addEventListener('click', () => {
     board.newGame();

@@ -41,6 +41,7 @@
   </div>
 
   <div id="controls">
+    <button id="btn-chesscom">Chess.com</button>
     <button id="btn-new">New</button>
     <button id="btn-flip">Flip</button>
     <button id="btn-undo">Undo</button>
@@ -58,6 +59,22 @@
         <option value="5">5</option>
       </select>
     </label>
+  </div>
+
+  <!-- Chess.com import modal -->
+  <div id="chesscom-modal" class="modal-overlay" hidden>
+    <div class="modal">
+      <h2>Import from Chess.com</h2>
+      <div class="modal-body">
+        <div id="chesscom-search">
+          <input id="chesscom-username" type="text" placeholder="Chess.com username" autocomplete="off" spellcheck="false" />
+          <button id="chesscom-fetch">Fetch games</button>
+        </div>
+        <div id="chesscom-status" class="modal-status"></div>
+        <div id="chesscom-games"></div>
+      </div>
+      <button id="chesscom-close" class="modal-close" aria-label="Close">&times;</button>
+    </div>
   </div>
 
   <script type="module" src="/src/main.js"></script>

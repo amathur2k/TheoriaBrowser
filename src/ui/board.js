@@ -255,6 +255,47 @@ export class BoardUI {
     this.render();
   }
 
+  /**
+   * Load a game from a PGN string, rebuilding move history.
+   * @param {string} pgn
+   */
+  loadPGN(pgn) {
+    const temp = new Chess();
+    try {
+      temp.loadPgn(pgn);
+    } catch {
+      throw new Error('Invalid PGN');
+    }
+
+    // Replay all moves to build history
+    const history = temp.history({ verbose: true });
+    const replay = new Chess();
+
+    this.game = new Chess();
+    this.moveHistory = [];
+    this.currentMoveIndex = -1;
+    this.selectedSquare = null;
+    this.legalMoves = [];
+
+    for (const move of history) {
+      replay.move(move);
+      const uci = move.from + move.to + (move.promotion || '');
+      this.moveHistory.push({
+        fen: replay.fen(),
+        san: move.san,
+        uci,
+      });
+    }
+
+    // Jump to last position
+    if (this.moveHistory.length > 0) {
+      this.currentMoveIndex = this.moveHistory.length - 1;
+      this.game = new Chess(this.moveHistory[this.currentMoveIndex].fen);
+    }
+
+    this.render();
+  }
+
   gameStatus() {
     if (this.game.isCheckmate()) {
       return this.game.turn() === 'w' ? 'Black wins by checkmate' : 'White wins by checkmate';

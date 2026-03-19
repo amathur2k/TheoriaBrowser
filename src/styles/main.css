@@ -379,6 +379,156 @@ main {
   background: #0f3460;
 }
 
+/* ================================================================
+   Chess.com import modal
+   ================================================================ */
+.modal-overlay {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.6);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 2000;
+}
+
+.modal-overlay[hidden] {
+  display: none;
+}
+
+.modal {
+  background: #16213e;
+  border: 1px solid #0f3460;
+  border-radius: 10px;
+  padding: 24px;
+  width: 480px;
+  max-width: 95vw;
+  max-height: 80vh;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+}
+
+.modal h2 {
+  color: #e94560;
+  font-size: 1.1rem;
+  margin-bottom: 16px;
+}
+
+.modal-body {
+  overflow-y: auto;
+  flex: 1;
+}
+
+.modal-close {
+  position: absolute;
+  top: 12px; right: 14px;
+  background: none;
+  border: none;
+  color: #888;
+  font-size: 1.4rem;
+  cursor: pointer;
+  line-height: 1;
+  padding: 0;
+}
+
+.modal-close:hover {
+  color: #e94560;
+}
+
+#chesscom-search {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+#chesscom-username {
+  flex: 1;
+  background: #1a1a2e;
+  border: 1px solid #0f3460;
+  border-radius: 4px;
+  color: #e0e0e0;
+  padding: 6px 10px;
+  font-size: 0.9rem;
+  outline: none;
+}
+
+#chesscom-username:focus {
+  border-color: #e94560;
+}
+
+#chesscom-fetch {
+  padding: 6px 14px;
+  background: #e94560;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  white-space: nowrap;
+}
+
+#chesscom-fetch:hover {
+  background: #c73652;
+}
+
+#chesscom-fetch:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.modal-status {
+  font-size: 0.8rem;
+  color: #888;
+  margin-bottom: 8px;
+  min-height: 18px;
+}
+
+.modal-status.error {
+  color: #e94560;
+}
+
+.game-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 10px;
+  border-radius: 5px;
+  cursor: pointer;
+  border: 1px solid transparent;
+  margin-bottom: 4px;
+  font-size: 0.82rem;
+  background: rgba(255,255,255,0.03);
+}
+
+.game-item:hover {
+  background: rgba(233,69,96,0.1);
+  border-color: rgba(233,69,96,0.3);
+}
+
+.game-players {
+  color: #ddd;
+  font-weight: 500;
+}
+
+.game-players .highlight {
+  color: #e94560;
+}
+
+.game-meta {
+  display: flex;
+  gap: 10px;
+  color: #888;
+  font-size: 0.75rem;
+  text-align: right;
+}
+
+.game-result {
+  font-weight: bold;
+  color: #aaa;
+}
+
+/* ================================================================ */
 .promotion-choices .piece {
   width: auto;
   height: auto;
