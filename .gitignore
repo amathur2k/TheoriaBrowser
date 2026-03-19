@@ -1,7 +1,8 @@
 node_modules/
 dist/
 *.nnue
-*.wasm
+theoria-src/src/*.wasm
+theoria-src/src/theoria.wasm
 theoria-src/src/*.o
 theoria-src/src/nnue/**/*.o
 theoria-src/src/syzygy/*.o
