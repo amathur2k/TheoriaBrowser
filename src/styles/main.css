@@ -1,0 +1,386 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background: #1a1a2e;
+  color: #e0e0e0;
+  min-height: 100vh;
+}
+
+header {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  padding: 12px 24px;
+  background: #16213e;
+  border-bottom: 2px solid #0f3460;
+}
+
+header h1 {
+  font-size: 1.4rem;
+  color: #e94560;
+}
+
+header .subtitle {
+  font-size: 0.85rem;
+  color: #888;
+}
+
+main {
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  gap: 16px;
+  padding: 20px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+/* Eval Bar */
+#eval-bar-container {
+  flex-shrink: 0;
+  width: 30px;
+}
+
+#eval-bar {
+  width: 30px;
+  height: 400px;
+  background: #333;
+  border-radius: 4px;
+  position: relative;
+  overflow: hidden;
+  border: 1px solid #555;
+}
+
+#eval-bar-fill {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 50%;
+  background: #f0f0f0;
+  transition: height 0.3s ease;
+}
+
+#eval-bar-label {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 0.65rem;
+  font-weight: bold;
+  color: #e94560;
+  text-shadow: 0 0 3px rgba(0,0,0,0.8);
+  z-index: 1;
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
+}
+
+/* Board */
+#board-container {
+  flex-shrink: 0;
+}
+
+#chessboard {
+  width: 400px;
+  min-height: 400px;
+}
+
+/* Analysis Panel */
+#analysis-panel {
+  width: 280px;
+  background: #16213e;
+  border-radius: 8px;
+  padding: 12px;
+  border: 1px solid #0f3460;
+}
+
+#analysis-panel h3 {
+  color: #e94560;
+  margin-bottom: 8px;
+  font-size: 1rem;
+}
+
+#engine-status {
+  font-size: 0.8rem;
+  color: #888;
+  margin-bottom: 8px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #333;
+}
+
+#search-info {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  font-size: 0.75rem;
+  color: #aaa;
+  margin-bottom: 8px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #333;
+}
+
+#pv-lines {
+  font-size: 0.8rem;
+  line-height: 1.6;
+}
+
+.pv-line {
+  padding: 4px 6px;
+  border-radius: 4px;
+  margin-bottom: 4px;
+  background: rgba(255,255,255,0.03);
+}
+
+.pv-line:first-child {
+  background: rgba(233,69,96,0.1);
+}
+
+.pv-score {
+  font-weight: bold;
+  color: #e94560;
+  margin-right: 6px;
+}
+
+.pv-moves {
+  color: #ccc;
+}
+
+/* Move List */
+#move-list-container {
+  max-width: 740px;
+  margin: 0 auto;
+  padding: 0 20px 8px;
+}
+
+#move-list {
+  background: #16213e;
+  border-radius: 8px;
+  padding: 10px 14px;
+  border: 1px solid #0f3460;
+  font-size: 0.85rem;
+  line-height: 1.8;
+  min-height: 36px;
+  color: #ccc;
+}
+
+#move-list .move-number {
+  color: #888;
+  margin-right: 2px;
+}
+
+#move-list .move {
+  cursor: pointer;
+  padding: 1px 3px;
+  border-radius: 3px;
+  margin-right: 4px;
+}
+
+#move-list .move:hover {
+  background: rgba(233,69,96,0.2);
+}
+
+#move-list .move.active {
+  background: rgba(233,69,96,0.35);
+  color: #fff;
+}
+
+/* Controls */
+#controls {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 20px 20px;
+  flex-wrap: wrap;
+}
+
+#controls button {
+  padding: 6px 14px;
+  background: #0f3460;
+  color: #e0e0e0;
+  border: 1px solid #1a5276;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.85rem;
+}
+
+#controls button:hover {
+  background: #1a5276;
+}
+
+#controls button.active {
+  background: #e94560;
+  border-color: #e94560;
+}
+
+#controls label {
+  font-size: 0.8rem;
+  color: #aaa;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+#controls input[type="range"] {
+  width: 80px;
+}
+
+#controls select {
+  background: #0f3460;
+  color: #e0e0e0;
+  border: 1px solid #1a5276;
+  border-radius: 4px;
+  padding: 2px 4px;
+}
+
+/* ================================================================
+   Chess Board
+   ================================================================ */
+.board-table {
+  border-collapse: collapse;
+  border: 2px solid #444;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+}
+
+.board-table td {
+  width: 50px;
+  height: 50px;
+  text-align: center;
+  vertical-align: middle;
+  font-size: 36px;
+  line-height: 50px;
+  cursor: pointer;
+  user-select: none;
+  position: relative;
+  padding: 0;
+}
+
+/* Board square colors — classic green/cream */
+.board-table td.light {
+  background: #eeeed2;
+}
+
+.board-table td.dark {
+  background: #769656;
+}
+
+/* ================================================================
+   Piece styling — white pieces get a bright fill with dark outline,
+   black pieces get a dark fill. Both are always readable on any square.
+   ================================================================ */
+.piece {
+  display: inline-block;
+  line-height: 50px;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+/* White pieces: light fill, dark stroke */
+.piece-w {
+  color: #fff;
+  text-shadow:
+    -1px -1px 0 #333,
+     1px -1px 0 #333,
+    -1px  1px 0 #333,
+     1px  1px 0 #333,
+     0   -1px 0 #333,
+     0    1px 0 #333,
+    -1px  0   0 #333,
+     1px  0   0 #333;
+}
+
+/* Black pieces: dark fill, slight highlight */
+.piece-b {
+  color: #222;
+  text-shadow:
+    -1px -1px 0 rgba(255,255,255,0.3),
+     1px -1px 0 rgba(255,255,255,0.3),
+    -1px  1px 0 rgba(255,255,255,0.3),
+     1px  1px 0 rgba(255,255,255,0.3);
+}
+
+/* ================================================================
+   Square states (selection, legal moves, last move)
+   ================================================================ */
+.board-table td.selected {
+  background: #f6f669 !important;
+}
+
+.board-table td.legal-target {
+  position: relative;
+}
+
+.board-table td.legal-target::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.2);
+  pointer-events: none;
+}
+
+.board-table td.legal-target.has-piece::after {
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  background: transparent;
+  border: 3px solid rgba(0, 0, 0, 0.25);
+}
+
+/* ================================================================
+   Promotion dialog
+   ================================================================ */
+.promotion-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0,0,0,0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.promotion-choices {
+  background: #16213e;
+  border: 2px solid #0f3460;
+  border-radius: 8px;
+  padding: 16px;
+  display: flex;
+  gap: 8px;
+}
+
+.promotion-choices button {
+  width: 60px;
+  height: 60px;
+  font-size: 36px;
+  background: #1a1a2e;
+  border: 1px solid #555;
+  border-radius: 4px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.promotion-choices button:hover {
+  background: #0f3460;
+}
+
+.promotion-choices .piece {
+  width: auto;
+  height: auto;
+  line-height: 1;
+}

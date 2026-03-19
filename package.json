@@ -1,0 +1,22 @@
+{
+  "name": "theoriabrowser",
+  "version": "1.0.0",
+  "description": "Browser-based Theoria chess engine with analysis UI",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "build:wasm": "node build/build.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "vite": "^8.0.1"
+  },
+  "dependencies": {
+    "chess.js": "^1.4.0",
+    "puppeteer": "^24.40.0"
+  }
+}

@@ -1,0 +1,35 @@
+Theoria16 Changelog
+====================
+
+Version 0.1 (Based on Stockfish 16.1)
+-------------------------------------
+
+2623f5c - Update project files for Theoria fork (2026-01-19 19:56:36 -0500)
+          - Final project configuration updates for Theoria16 release
+
+1daa86b - Created set_version.sh for easy version edits (2026-01-16 07:08:32 -0500)
+          - Added shell script for streamlined version number management
+
+9044504 - Fixed Makefile to not auto-download SF nnue at build (2026-01-16 07:07:08 -0500)
+          - Disabled automatic NNUE download from Stockfish servers
+          - Allows custom-trained NNUE to be injected at compile time
+
+d89ef61 - Remove LTO build artifacts (2026-01-14 22:08:24 +0000)
+          - Cleaned up link-time optimization temporary files
+
+15912f6 - Fix Makefile to remove net target, add NNUE files (2026-01-13 21:48:53 +0000)
+          - Removed default network target from build process
+          - Added support for custom NNUE file inclusion
+
+98024fe - Changed banner to Theoria 0.1 (2026-01-05 16:29:59 +0000)
+          - Updated engine identification string to "Theoria 0.1"
+
+c19061e - Initial commit - Theoria16 source code (2026-01-03 23:47:52 +0000)
+          - Forked from Stockfish 16.1 source
+          - Disabled small net NNUE evaluation (only big net L1=2560 used)
+          - Base for custom NNUE training integration
+
+License
+-------
+Theoria16 is licensed under the GNU General Public License v3.0.
+See Copying.txt and AUTHORS for full license and attribution details.

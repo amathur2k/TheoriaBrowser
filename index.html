@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TheoriaBrowser</title>
+  <link rel="stylesheet" href="/src/styles/main.css" />
+</head>
+<body>
+  <header>
+    <h1>TheoriaBrowser</h1>
+    <span class="subtitle">Theoria Chess Engine in the Browser</span>
+  </header>
+
+  <main>
+    <div id="eval-bar-container">
+      <div id="eval-bar">
+        <div id="eval-bar-fill"></div>
+        <div id="eval-bar-label">0.0</div>
+      </div>
+    </div>
+
+    <div id="board-container">
+      <div id="chessboard"></div>
+    </div>
+
+    <div id="analysis-panel">
+      <h3>Analysis</h3>
+      <div id="engine-status">Engine: loading...</div>
+      <div id="search-info">
+        <span id="depth-display">Depth: -</span>
+        <span id="nodes-display">Nodes: -</span>
+        <span id="nps-display">NPS: -</span>
+      </div>
+      <div id="pv-lines"></div>
+    </div>
+  </main>
+
+  <div id="move-list-container">
+    <div id="move-list"></div>
+  </div>
+
+  <div id="controls">
+    <button id="btn-new">New</button>
+    <button id="btn-flip">Flip</button>
+    <button id="btn-undo">Undo</button>
+    <button id="btn-analysis">Analysis: Off</button>
+    <label>
+      Depth: <input type="range" id="depth-slider" min="1" max="30" value="20" />
+      <span id="depth-value">20</span>
+    </label>
+    <label>
+      MultiPV: <select id="multipv-select">
+        <option value="1">1</option>
+        <option value="2">2</option>
+        <option value="3">3</option>
+        <option value="4">4</option>
+        <option value="5">5</option>
+      </select>
+    </label>
+  </div>
+
+  <script type="module" src="/src/main.js"></script>
+</body>
+</html>

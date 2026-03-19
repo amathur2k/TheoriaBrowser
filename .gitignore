@@ -1,0 +1,12 @@
+node_modules/
+dist/
+*.nnue
+*.wasm
+theoria-src/src/*.o
+theoria-src/src/nnue/**/*.o
+theoria-src/src/syzygy/*.o
+theoria-src/src/emscripten/*.o
+theoria-src/src/theoria.js
+theoria-src/src/theoria.wasm
+theoria-src/src/theoria.worker.js
+theoria-0.2-src.tar.bz2

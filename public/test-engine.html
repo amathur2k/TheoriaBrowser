@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Engine Test</title>
+</head>
+<body>
+  <h2>Theoria Engine Test</h2>
+  <div style="margin-bottom:10px">
+    <button onclick="sendCmd('uci')">uci</button>
+    <button onclick="sendCmd('isready')">isready</button>
+    <button onclick="sendCmd('go depth 5')">go depth 5</button>
+    <button onclick="sendCmd('stop')">stop</button>
+    <button onclick="sendCmd('d')">display</button>
+    <button onclick="sendCmd('quit')">quit</button>
+  </div>
+  <pre id="log" style="background:#111;color:#0f0;padding:10px;height:75vh;overflow:auto;font-size:13px;"></pre>
+  <script>
+    const log = document.getElementById('log');
+    let worker = null;
+    let ready = false;
+
+    function addLog(msg, color) {
+      const span = document.createElement('span');
+      span.style.color = color || '#0f0';
+      span.textContent = msg + '\n';
+      log.appendChild(span);
+      log.scrollTop = log.scrollHeight;
+    }
+
+    function sendCmd(cmd) {
+      if (!worker) { addLog('No worker!', 'red'); return; }
+      addLog('>>> ' + cmd, '#ff0');
+      worker.postMessage(cmd);
+    }
+
+    // Diagnostics
+    addLog('SharedArrayBuffer: ' + (typeof SharedArrayBuffer !== 'undefined'), '#aaa');
+    addLog('crossOriginIsolated: ' + self.crossOriginIsolated, '#aaa');
+    addLog('Creating worker...');
+
+    try {
+      worker = new Worker('/src/engine/theoria-worker.js');
+    } catch(e) {
+      addLog('WORKER CREATE FAILED: ' + e.message, 'red');
+    }
+
+    if (worker) {
+      worker.onmessage = (e) => {
+        const msg = e.data;
+        if (msg === '__ready__') {
+          ready = true;
+          addLog('=== ENGINE READY ===', '#0ff');
+          addLog('Sending UCI handshake...', '#aaa');
+          sendCmd('uci');
+        } else if (typeof msg === 'string' && msg.includes('[error]')) {
+          addLog('MSG: ' + msg, 'red');
+        } else if (typeof msg === 'string' && msg.startsWith('info string')) {
+          addLog('MSG: ' + msg, '#aaa');
+        } else {
+          addLog('MSG: ' + msg, '#0f0');
+        }
+      };
+      worker.onerror = (e) => {
+        addLog('WORKER ERROR: ' + e.message + ' at ' + e.filename + ':' + e.lineno, 'red');
+      };
+
+      addLog('Sending __init__...');
+      worker.postMessage('__init__');
+    }
+
+    // Timeout markers
+    setTimeout(() => addLog('--- 30s elapsed ---', '#666'), 30000);
+    setTimeout(() => addLog('--- 60s elapsed ---', '#666'), 60000);
+  </script>
+</body>
+</html>
