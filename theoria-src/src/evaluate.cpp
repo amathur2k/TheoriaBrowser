@@ -149,6 +149,12 @@ void NNUE::verify(const OptionsMap&                                        optio
 
     for (const auto& [netSize, evalFile] : evalFiles)
     {
+        // Only verify the network that is actually in use
+        if (netSize == Big && Eval::useSmallNet)
+            continue;
+        if (netSize == Small && !Eval::useSmallNet)
+            continue;
+
         std::string user_eval_file = options[evalFile.optionName];
 
         if (user_eval_file.empty())
