@@ -92,8 +92,6 @@ export class AnalysisPanel {
     try {
       const tempGame = new Chess(this.currentFen);
       const sanMoves = [];
-      const startTurn = tempGame.turn();
-      let moveNum = Math.floor(parseInt(this.currentFen.split(' ')[5]) || 1);
 
       for (let i = 0; i < Math.min(pvMoves.length, 12); i++) {
         const uci = pvMoves[i];
@@ -101,23 +99,19 @@ export class AnalysisPanel {
         const to = uci.substring(2, 4);
         const promotion = uci.length > 4 ? uci[4] : undefined;
 
+        const turn = tempGame.turn();
+        const moveNum = tempGame.moveNumber();
+
         const move = tempGame.move({ from, to, promotion });
         if (!move) break;
 
-        const turn = i === 0 ? startTurn :
-          (startTurn === 'w' ? (i % 2 === 0 ? 'w' : 'b') : (i % 2 === 0 ? 'b' : 'w'));
-
-        if (turn === 'w' || i === 0) {
-          if (turn === 'w') {
-            sanMoves.push(`${moveNum}. ${move.san}`);
-          } else if (i === 0) {
-            sanMoves.push(`${moveNum}... ${move.san}`);
-          }
+        if (turn === 'w') {
+          sanMoves.push(`${moveNum}. ${move.san}`);
+        } else if (i === 0) {
+          sanMoves.push(`${moveNum}... ${move.san}`);
         } else {
           sanMoves.push(move.san);
         }
-
-        if (turn === 'b') moveNum++;
       }
 
       return sanMoves.join(' ');
