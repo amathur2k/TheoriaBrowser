@@ -1,27 +1,36 @@
 // Web Worker: loads Theoria WASM engine (non-ASYNCIFY build)
 //
-// main() runs to completion during Theoria() init, then
-// emscripten_set_main_loop polls the command queue every ~10ms.
-// We send commands via ccall('command') which pushes to the C++ queue.
+// Supports two evaluation modes:
+//   'theoria' — nn-theoria.nnue (58MB, custom Theoria NNUE, big net)
+//   'fast'    — nn-baff1ede1f90.nnue (3.4MB, Stockfish small net)
+//
+// Send '__init__' or { type: '__init__', mode: 'theoria'|'fast' } to start.
+
+const NNUE_FILES = {
+  theoria: { name: 'nn-theoria.nnue',      evalFile: 'EvalFile',      useSmallNet: false },
+  fast:    { name: 'nn-baff1ede1f90.nnue', evalFile: 'EvalFileSmall', useSmallNet: true  },
+};
 
 let engine = null;
 let pendingCommands = [];
 let engineReady = false;
+let currentMode = 'theoria';
 
 self.onmessage = function(e) {
-  const cmd = e.data;
+  const msg = e.data;
 
-  if (cmd === '__init__') {
+  if (msg === '__init__' || (msg && msg.type === '__init__')) {
+    if (msg && msg.mode) currentMode = msg.mode;
     initEngine();
     return;
   }
 
   if (!engineReady) {
-    pendingCommands.push(cmd);
+    pendingCommands.push(msg);
     return;
   }
 
-  sendCommand(cmd);
+  sendCommand(msg);
 };
 
 function sendCommand(cmd) {
@@ -34,75 +43,117 @@ function sendCommand(cmd) {
   }
 }
 
-async function fetchNNUE(name) {
-  try {
-    const resp = await fetch('/wasm/' + name);
-    if (resp.ok) {
-      const data = new Uint8Array(await resp.arrayBuffer());
-      self.postMessage('info string Worker: loaded ' + name + ' (' + (data.length / 1024 / 1024).toFixed(1) + ' MB)');
-      return data;
-    }
-    self.postMessage('info string Worker: ' + name + ' not found (HTTP ' + resp.status + ')');
-  } catch (e) {
-    self.postMessage('info string Worker: fetch error ' + name + ': ' + e.message);
-  }
-  return null;
+// ── IndexedDB cache ──────────────────────────────────────────────────────────
+
+const DB_NAME    = 'theoria-nnue-cache';
+const DB_VERSION = 1;
+const DB_STORE   = 'nnue-files';
+
+function openDB() {
+  return new Promise((resolve, reject) => {
+    const req = indexedDB.open(DB_NAME, DB_VERSION);
+    req.onupgradeneeded = e => e.target.result.createObjectStore(DB_STORE);
+    req.onsuccess       = e => resolve(e.target.result);
+    req.onerror         = e => reject(e.target.error);
+  });
 }
+
+async function cacheGet(db, key) {
+  return new Promise((resolve, reject) => {
+    const tx  = db.transaction(DB_STORE, 'readonly');
+    const req = tx.objectStore(DB_STORE).get(key);
+    req.onsuccess = e => resolve(e.target.result || null);
+    req.onerror   = e => reject(e.target.error);
+  });
+}
+
+async function cachePut(db, key, value) {
+  return new Promise((resolve, reject) => {
+    const tx  = db.transaction(DB_STORE, 'readwrite');
+    const req = tx.objectStore(DB_STORE).put(value, key);
+    req.onsuccess = () => resolve();
+    req.onerror   = e => reject(e.target.error);
+  });
+}
+
+// ── NNUE fetch with caching ───────────────────────────────────────────────────
+
+async function loadNNUE(filename) {
+  let db = null;
+  try { db = await openDB(); } catch {}
+
+  // Try cache first
+  if (db) {
+    try {
+      const cached = await cacheGet(db, filename);
+      if (cached) {
+        self.postMessage('info string Worker: ' + filename + ' loaded from cache');
+        return cached;
+      }
+    } catch {}
+  }
+
+  // Fetch from server
+  self.postMessage('info string Worker: downloading ' + filename + '...');
+  try {
+    const resp = await fetch('/wasm/' + filename);
+    if (!resp.ok) {
+      self.postMessage('info string Worker: ' + filename + ' not found (HTTP ' + resp.status + ')');
+      return null;
+    }
+    const data = new Uint8Array(await resp.arrayBuffer());
+    self.postMessage('info string Worker: ' + filename + ' downloaded (' +
+      (data.length / 1024 / 1024).toFixed(1) + ' MB)');
+
+    // Store in cache
+    if (db) {
+      try { await cachePut(db, filename, data); } catch {}
+    }
+    return data;
+  } catch (e) {
+    self.postMessage('info string Worker: fetch error ' + filename + ': ' + e.message);
+    return null;
+  }
+}
+
+// ── Engine init ───────────────────────────────────────────────────────────────
 
 async function initEngine() {
   try {
-    self.postMessage('info string Worker: fetching NNUE files...');
+    const cfg = NNUE_FILES[currentMode] || NNUE_FILES.theoria;
+    self.postMessage('info string Worker: mode=' + currentMode + ', loading ' + cfg.name);
 
-    // Fetch both NNUE files in parallel
-    const [nnueBig, nnueSmall] = await Promise.all([
-      fetchNNUE('nn-b1a57edbea57.nnue'),
-      fetchNNUE('nn-baff1ede1f90.nnue'),
-    ]);
+    const nnueData = await loadNNUE(cfg.name);
 
     self.postMessage('info string Worker: loading WASM module...');
     importScripts('/wasm/theoria.js');
 
     if (typeof Theoria !== 'function') {
-      self.postMessage('info string [error] Theoria is ' + typeof Theoria + ', not a function');
+      self.postMessage('info string [error] Theoria is not a function');
       return;
     }
 
     let gotEngineReady = false;
 
     const moduleConfig = {
-      locateFile: function(path) {
-        return '/wasm/' + path;
-      },
+      locateFile: function(path) { return '/wasm/' + path; },
 
-      // Write NNUE files to virtual FS before main() runs
       preRun: [function() {
-        // In non-ASYNCIFY mode with MODULARIZE, FS is available via Module
         const FS = this.FS || (typeof Module !== 'undefined' && Module.FS);
-        if (FS) {
-          if (nnueBig) {
-            FS.writeFile('/nn-b1a57edbea57.nnue', nnueBig);
-            self.postMessage('info string Worker: big NNUE written to FS');
-          }
-          if (nnueSmall) {
-            FS.writeFile('/nn-baff1ede1f90.nnue', nnueSmall);
-            self.postMessage('info string Worker: small NNUE written to FS');
-          }
-        } else {
-          self.postMessage('info string Worker: WARNING - FS not available in preRun, will reload via setoption');
+        if (FS && nnueData) {
+          // Write NNUE under both its real name and the slot name the engine expects
+          FS.writeFile('/' + cfg.name, nnueData);
+          self.postMessage('info string Worker: ' + cfg.name + ' written to FS');
         }
       }],
 
       print: function(text) {
-        // "info string engine ready" signals main() has finished init
-        if (text === 'info string engine ready') {
-          gotEngineReady = true;
-        }
+        if (text === 'info string engine ready') gotEngineReady = true;
         self.postMessage(text);
       },
 
       printErr: function(text) {
-        if (text.includes('Blocking')) return;
-        if (text.includes('pre-main')) return;
+        if (text.includes('Blocking') || text.includes('pre-main')) return;
         self.postMessage('info string [stderr] ' + text);
       },
     };
@@ -111,42 +162,28 @@ async function initEngine() {
     engine = await Theoria(moduleConfig);
     self.postMessage('info string Worker: module loaded');
 
-    // With emscripten_set_main_loop (no ASYNCIFY), main() runs to completion
-    // during Theoria(). The "info string engine ready" message confirms init finished.
-    if (!gotEngineReady) {
-      // Wait a bit in case main() is still finishing
-      for (let i = 0; i < 100 && !gotEngineReady; i++) {
-        await new Promise(r => setTimeout(r, 100));
+    // Wait for engine ready signal
+    for (let i = 0; i < 100 && !gotEngineReady; i++) {
+      await new Promise(r => setTimeout(r, 100));
+    }
+
+    // Point the engine to the correct NNUE slot
+    if (engine.FS && nnueData) {
+      try { engine.FS.stat('/' + cfg.name); }
+      catch {
+        engine.FS.writeFile('/' + cfg.name, nnueData);
       }
     }
 
-    if (!gotEngineReady) {
-      self.postMessage('info string Worker: WARNING - no "engine ready" signal after 10s');
-    }
-
-    // If preRun didn't have FS, write files now and reload via UCI
-    if (engine.FS) {
-      const hasFiles = (() => {
-        try { engine.FS.stat('/nn-b1a57edbea57.nnue'); return true; }
-        catch { return false; }
-      })();
-      if (!hasFiles && nnueBig) {
-        engine.FS.writeFile('/nn-b1a57edbea57.nnue', nnueBig);
-        engine.FS.writeFile('/nn-baff1ede1f90.nnue', nnueSmall);
-        self.postMessage('info string Worker: NNUE written to FS (post-init)');
-        // Reload via UCI
-        sendCommand('setoption name EvalFile value nn-b1a57edbea57.nnue');
-        sendCommand('setoption name EvalFileSmall value nn-baff1ede1f90.nnue');
-      }
-    }
+    // Configure NNUE routing
+    sendCommand('setoption name ' + cfg.evalFile + ' value ' + cfg.name);
+    sendCommand('setoption name UseSmallNet value ' + (cfg.useSmallNet ? 'true' : 'false'));
 
     engineReady = true;
     self.postMessage('__ready__');
 
     // Flush pending commands
-    for (const cmd of pendingCommands) {
-      sendCommand(cmd);
-    }
+    for (const cmd of pendingCommands) sendCommand(cmd);
     pendingCommands = [];
 
   } catch (err) {

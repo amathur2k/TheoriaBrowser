@@ -14,8 +14,9 @@ export class TheoriaEngine {
   /**
    * Initialize the engine worker and wait for UCI handshake.
    * @param {function} [onStatus] - Optional callback for status messages during loading
+   * @param {string} [mode] - 'theoria' (58MB custom NNUE) or 'fast' (3.4MB SF small net)
    */
-  async init(onStatus) {
+  async init(onStatus, mode = 'theoria') {
     return new Promise((resolve, reject) => {
       try {
         this.worker = new Worker('/src/engine/theoria-worker.js');
@@ -48,7 +49,7 @@ export class TheoriaEngine {
       };
 
       this._addListener(readyHandler);
-      this.worker.postMessage('__init__');
+      this.worker.postMessage({ type: '__init__', mode });
     });
   }
 

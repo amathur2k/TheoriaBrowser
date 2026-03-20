@@ -86,6 +86,9 @@ UCI::UCI(int argc, char** argv) :
     options["EvalFileSmall"] << Option(EvalFileDefaultNameSmall, [this](const Option&) {
         evalFiles = Eval::NNUE::load_networks(cli.binaryDirectory, options, evalFiles);
     });
+    options["UseSmallNet"] << Option(false, [](const Option& o) {
+        Eval::useSmallNet = bool(o);
+    });
     options["StabilityTermination"] << Option(true);
     options["StabilityThreshold"] << Option(15, 1, 100);
     options["StabilityMinDepth"] << Option(10, 4, 20);

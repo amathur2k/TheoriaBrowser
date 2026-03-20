@@ -218,6 +218,11 @@ main {
   border-color: #e94560;
 }
 
+.engine-mode-label {
+  font-size: 0.8rem;
+  color: #aaa;
+}
+
 #controls label {
   font-size: 0.8rem;
   color: #aaa;

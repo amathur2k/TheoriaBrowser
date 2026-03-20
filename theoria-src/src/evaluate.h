@@ -31,6 +31,8 @@ class OptionsMap;
 
 namespace Eval {
 
+extern bool useSmallNet;
+
 std::string trace(Position& pos);
 
 int   simple_eval(const Position& pos, Color c);

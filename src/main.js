@@ -12,6 +12,7 @@ let evalBar = null;
 let analysisEnabled = false;
 let maxDepth = 20;
 let multiPV = 1;
+let engineMode = 'theoria';
 
 async function main() {
   // Initialize UI components
@@ -37,7 +38,7 @@ async function main() {
         if (line.startsWith('info string Worker:')) {
           analysis.setStatus(line.replace('info string Worker: ', ''));
         }
-      }),
+      }, engineMode),
       new Promise((_, reject) => setTimeout(() => reject(new Error('timeout (120s)')), 120000)),
     ]);
     analysis.setStatus('ready');
@@ -223,6 +224,49 @@ function setupControls() {
   usernameInput.addEventListener('keydown', (e) => {
     if (e.key === 'Enter') doFetch();
   });
+
+  // Engine mode toggle (Theoria / Fast)
+  const btnModeTheoria = document.getElementById('btn-mode-theoria');
+  const btnModeFast = document.getElementById('btn-mode-fast');
+
+  async function switchEngineMode(newMode) {
+    if (newMode === engineMode) return;
+    engineMode = newMode;
+
+    btnModeTheoria.classList.toggle('active', engineMode === 'theoria');
+    btnModeFast.classList.toggle('active', engineMode === 'fast');
+
+    // Stop and destroy the current engine
+    if (engine) {
+      engine.stop();
+      engine.quit();
+      engine = null;
+    }
+    analysis.clear();
+    evalBar.reset();
+    analysis.setStatus('loading ' + (engineMode === 'fast' ? 'Fast (3.4MB)' : 'Theoria (58MB)') + '...');
+
+    try {
+      engine = new TheoriaEngine();
+      await Promise.race([
+        engine.init((line) => {
+          if (line.startsWith('info string Worker:')) {
+            analysis.setStatus(line.replace('info string Worker: ', ''));
+          }
+        }, engineMode),
+        new Promise((_, reject) => setTimeout(() => reject(new Error('timeout (120s)')), 120000)),
+      ]);
+      analysis.setStatus('ready');
+      if (analysisEnabled) runAnalysis();
+    } catch (err) {
+      console.warn('Engine failed to load:', err.message);
+      analysis.setStatus('not available (' + err.message + ')');
+      engine = null;
+    }
+  }
+
+  btnModeTheoria.addEventListener('click', () => switchEngineMode('theoria'));
+  btnModeFast.addEventListener('click', () => switchEngineMode('fast'));
 
   // New Game
   document.getElementById('btn-new').addEventListener('click', () => {

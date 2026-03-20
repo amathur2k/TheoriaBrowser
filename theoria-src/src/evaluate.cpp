@@ -63,6 +63,10 @@ namespace Stockfish {
 
 namespace Eval {
 
+// Set to true to use the small NNUE network (low memory, faster).
+// Controlled via UCI option "UseSmallNet".
+bool useSmallNet = false;
+
 
 // Tries to load a NNUE network at startup time, or when the engine
 // receives a UCI command "setoption name EvalFile value nn-[a-z0-9]{12}.nnue"
@@ -193,7 +197,7 @@ Value Eval::evaluate(const Position& pos, int optimism) {
     assert(!pos.checkers());
 
     int  simpleEval = simple_eval(pos, pos.side_to_move());
-    bool smallNet   = false;  // MODIFIED: Always use big net
+    bool smallNet   = Eval::useSmallNet;
 
     int nnueComplexity;
 
